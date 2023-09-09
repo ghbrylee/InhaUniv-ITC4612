@@ -1,2 +1,2 @@
-# WebProgram
-WebProgramming lecture
+# 인하대학교 웹서버프로그래밍 ITC4612
+12204159 이건휘
