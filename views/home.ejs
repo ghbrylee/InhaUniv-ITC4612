@@ -1,58 +1,109 @@
-<!-- 시험 문제는 id 괄호넣기 방식으로 -->
-<div class="row my-5">
+<style>
+    #div_books img{
+        cursor:pointer
+    }
+</style>
+<div class="row my-5"> <!-- y margin은 최대 5 -->
     <div class="col">
         <div class="row mb-2 justify-content-end">
-            <form name="frm" class="col-6 col-md-4 col-lg-3"><!-- 일반, 미들, 라지 해상도 -->
+            <form name="frm" class="col-6 col-md-4 col-lg-3">
                 <div class="input-group">
-                    <input name="query" class="form-control" value="자바">
+                    <input name="query" class="form-control" value="이건희">
                     <button class="btn btn-primary">검색</button>
+                    <!-- button을 누르거나 enter 치면 발생하는 event는 submit -->
                 </div>
             </form>
         </div>
+        <!-- 검색 결과 출력 -->
         <div id="div_books" class="row"></div>
+        <!-- 페이지 이동 -->
+        <div class="text-center">
+            <button id="prev_btn" class="btn btn-primary">이전</button>
+            <span id="span_page" class="mx-3">1/10</span>
+            <button id="next_btn" class="btn btn-primary">다음</button>
+        </div>
     </div>
 </div>
+<!-- 도서 정보 출력 template -->
 <script type="x-handlebars-template" id="temp_books">
     {{#each documents}}
-        <div class="col-6 col-md-4 col-lg-2 mb-2">
-            <div class="card">
-                <div class="card-body">
-                    <img src="{{thumbnail}}" width="100%">
-                    <div class="ellipsis text-center">{{ title }}</div>
-                </div>
+    <div class="col-6 col-md-4 col-lg-2 mb-2">
+        <div class="card">
+            <div class="card-body">
+                <img src="{{chkImage thumbnail}}" width="90%" index="{{@index}}">
+                <div class="ellipsis text-center">{{title}}</div>
+            </div>
+            <div class="card-footer">
+                {{fmtPrice price}}
             </div>
         </div>
+    </div>
+    <%-include('books/modal.ejs')%>
     {{/each}}
 </script>
+<!-- Handlebars 함수 -->
 <script>
-    let query=$(frm.query).val();
-    let page=1;
-
-    $(frm).on("submit", function(e){
-        e.preventDefault();
-        query=$(frm.query).val();
-        if(query=="") {
-            alert("검색 내용을 입력하세요!");
-            $(frm.query).focus();
-        }else{
-            page=1;
-            getList();
+    Handlebars.registerHelper("chkImage", function(image){
+        if(image) {
+            return image;
+        } else {
+            return "https://via.placeholder.com/120x170";
         }
     });
 
-    function getList() {
+    Handlebars.registerHelper("fmtPrice", function(price){
+        if(price) return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '원';
+    })
+</script>
+<!-- $ : Jquery -->
+<script>
+    let query = $(frm.query).val();
+    let page = 1;
+
+    // 이미지를 클릭했을 때
+    $("#div_books").on("click", "img", function(){
+        let index = $(this).attr("index");
+        $("#modal" + index).modal("show");
+    })
+    
+    $(frm).on("submit", function(e){
+        e.preventDefault(); // Default event의 발생을 막음
+        query = $(frm.query).val();
+        page = 1;
+        getBooks();
+    })
+    // 다음 버튼을 클릭한 경우
+    $("#next_btn").on("click", function(e){
+        page++;
+        getBooks();
+    })
+    // 이전 버튼을 클릭한 경우
+    $("#prev_btn").on("click", function(e){
+        page--;
+        getBooks();
+    })
+    
+    getBooks();
+    function getBooks() {
         $.ajax({
-            type:'get',
-            url:'https://dapi.kakao.com/v3/search/book',
-            headers:{Authorization: `KakaoAK 29e82fbcca120b0de0f8be1f9ce91a29`},
-            data:{ query: query, page: page, size:6 },
-            dataType:'json',
-            success:function(data){
-                console.log(data)
-                let temp=Handlebars.compile($("#temp_books").html());
+            type: "get",
+            url: "https://dapi.kakao.com/v3/search/book?target=title",
+            headers: {"Authorization": "KakaoAK 29e82fbcca120b0de0f8be1f9ce91a29"},
+            data: {query: query, page: page, size: 6},
+            success: function(data) {
+                console.log(data);
+                let temp = Handlebars.compile($("#temp_books").html());
                 $("#div_books").html(temp(data));
 
+                let last = Math.ceil(data.meta.pageable_count / 6);
+                $("#span_page").html(page + "/" + last)
+
+                if (page == 1)  $("#prev_btn").attr("disabled", true);
+                else            $("#prev_btn").attr("disabled", false);
+
+                if (data.meta.is_end)   $("#next_btn").attr("disabled", true);
+                else                    $("#next_btn").attr("disabled", false);
             }
-        });
+        })
     }
 </script>

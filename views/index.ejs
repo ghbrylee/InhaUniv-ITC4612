@@ -9,10 +9,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/3.0.1/handlebars.js"></script>
   </head>
   <body>
-    <div class="container">
-      <%-include('header.ejs') %>
-      <%-include(pageName) %>
-      <%-include('footer.ejs') %>
+    <div class="container"> <!-- bootstrap에서 제공되는 class -->
+      <%-include('header.ejs')%>
+      <%-include(pageName)%>
+      <%-include('footer.ejs')%>
     </div>
+    <!--
+    <h1><%= title %></h1>
+    <p>Welcome to <%= title %></p>
+    -->
   </body>
 </html>
