@@ -1,5 +1,58 @@
+<!-- 시험 문제는 id 괄호넣기 방식으로 -->
 <div class="row my-5">
     <div class="col">
-        <h1 class="text-center">Home......</h1>
+        <div class="row mb-2 justify-content-end">
+            <form name="frm" class="col-6 col-md-4 col-lg-3"><!-- 일반, 미들, 라지 해상도 -->
+                <div class="input-group">
+                    <input name="query" class="form-control" value="자바">
+                    <button class="btn btn-primary">검색</button>
+                </div>
+            </form>
+        </div>
+        <div id="div_books" class="row"></div>
     </div>
 </div>
+<script type="x-handlebars-template" id="temp_books">
+    {{#each documents}}
+        <div class="col-6 col-md-4 col-lg-2 mb-2">
+            <div class="card">
+                <div class="card-body">
+                    <img src="{{thumbnail}}" width="100%">
+                    <div class="ellipsis text-center">{{ title }}</div>
+                </div>
+            </div>
+        </div>
+    {{/each}}
+</script>
+<script>
+    let query=$(frm.query).val();
+    let page=1;
+
+    $(frm).on("submit", function(e){
+        e.preventDefault();
+        query=$(frm.query).val();
+        if(query=="") {
+            alert("검색 내용을 입력하세요!");
+            $(frm.query).focus();
+        }else{
+            page=1;
+            getList();
+        }
+    });
+
+    function getList() {
+        $.ajax({
+            type:'get',
+            url:'https://dapi.kakao.com/v3/search/book',
+            headers:{Authorization: `KakaoAK 29e82fbcca120b0de0f8be1f9ce91a29`},
+            data:{ query: query, page: page, size:6 },
+            dataType:'json',
+            success:function(data){
+                console.log(data)
+                let temp=Handlebars.compile($("#temp_books").html());
+                $("#div_books").html(temp(data));
+
+            }
+        });
+    }
+</script>
