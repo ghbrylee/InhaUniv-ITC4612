@@ -6,4 +6,9 @@ router.get('/', function(req, res, next) {
   res.send('respond with a resource');
 });
 
+// 로그인 페이지
+router.get('/login', function(req, res){
+  res.render('index', {title:'로그인', pageName:'users/login.ejs'});
+});
+
 module.exports = router;
