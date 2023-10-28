@@ -1,13 +1,12 @@
-
 <style>
-    form span{
-        width:100px;
+    form span {
+        width: 100px;
     }
 </style>
 <div class="row my-5 justify-content-center">
-    <div class="col-6">
+    <div class="col">
         <h1 class="text-center">로그인</h1>
-        <form name="frm" class="card p-3">
+        <form class="card p-3" name="frm">
             <div class="input-group mb-3">
                 <span class="input-group-text">이메일</span>
                 <input name="email" class="form-control" value="geonhwi@kakao.com">
@@ -23,34 +22,40 @@
         </div>
     </div>
 </div>
+
 <script type="module">
     import { app } from "/javascripts/firebaseInit.js";
     import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
 
     const auth = getAuth(app);
-    //이름이 아닌 아이디일 경우 #frm
-    $(frm).on("submit", function(e){
-        e.preventDefault();
-        const email=$(frm.email).val();
-        const password=$(frm.password).val();
-       
-        //유효성 체크
-        if(email==""){
-            alert("이메일을 입력하세요 제발...");
+
+    $(frm).on('submit', function(e) {
+        e.preventDefault(); // Default event의 발생을 막음
+        const email = $(frm.email).val();
+        const password = $(frm.password).val();
+        if(email == "") {
+            alert("이메일을 입력하세요");
             $(frm.email).focus();
-        }else if(password==""){
-            alert("비밀번호 입력하세요 제발...")
+        } else if(password == "") {
+            alert("비밀번호를 입력하세요");
             $(frm.password).focus();
-        }else{
-            //로그인체크
-            signInWithEmailAndPassword(auth, email, password).then(success=>{
-                //로그인 성공
+        } else {
+            // 로그인 체크
+            signInWithEmailAndPassword(auth, email, password)
+            .then(success=>{
                 console.log(success);
-                sessionStorage.setItem("email",email);
-                sessionStorage.setItem("uid",success.user.uid);
-                alert("로그인에 성공하셨습니다."); //f12에서 application에 세션스토리지에서 확인가능
-                location.href="/";
-            }).catch(error=>{
+                sessionStorage.setItem("email", email);
+                sessionStorage.setItem("uid", success.user.uid);
+                alert("로그인에 성공하셨습니다");
+                if(sessionStorage.getItem("target")) {
+                    location.href = sessionStorage.getItem("target");
+                    sessionStorage.removeItem("target");
+                } else {
+                    location.href = "/";
+                }
+            })
+            .catch((error) => {
+                console.log(error);
                 alert(error.message);
             });
         }
