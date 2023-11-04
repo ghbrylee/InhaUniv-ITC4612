@@ -1,22 +1,8 @@
-@font-face {
-  font-family: 'GmarketSansMedium';
-  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff') format('woff');
-  font-weight: normal;
-  font-style: normal;
-}
+@import url('https://fonts.googleapis.com/css2?family=Hi+Melody&family=Yeon+Sung&display=swap');
 
 * {
-  font-family: 'GmarketSansMedium';
-}
-
-a {
-  color: #00B7FF;
-}
-
-@media screen and (max-width: 960px) {
-  #img_header {
-      display: none;
-  }
+  font-family: 'Hi Melody', cursive;
+font-family: 'Yeon Sung', cursive;
 }
 
 .ellipsis {
