@@ -1,0 +1,117 @@
+<div class="row my-5">
+    <div class="col">
+        <h1 class="text-center">지역검색</h1>
+        <div class="row mb-2 justify-content-end">
+            <form name="frm" class="col-6 col-md-4 col-lg-3">
+                <div class="input-group">
+                    <input name="query" class="form-control" value="인하대학교">
+                    <button class="btn btn-primary">검색</button>
+                    <!-- button을 누르거나 enter 치면 form에서 submit event가 발생 -->
+                </div>
+            </form>
+        </div>
+        <!-- 검색 결과 출력 -->
+        <div id="div_locals"></div>
+        <!-- 페이지 이동 -->
+        <div class="text-center">
+            <button id="prev_btn" class="btn btn-primary">이전</button>
+            <span id="span_page" class="mx-3">1/10</span>
+            <button id="next_btn" class="btn btn-primary">다음</button>
+        </div>
+    </div>
+</div>
+
+<!-- 템플릿 -->
+<script type="x-handlebars-template" id="temp_locals">
+    <table class="table">
+        {{#each documents}}
+        <tr>
+            <td>{{place_name}}</td>
+            <td>{{address_name}}</td>
+            <td>{{phone}}</td>
+            <td><button class="btn btn-primary btn-sm" local="{{toString @this}}">즐겨찾기</button></td>
+        </tr>
+        {{/each}}
+    </table>
+</script>
+
+<script>
+    Handlebars.registerHelper("toString", function(local) {
+        return JSON.stringify(local);
+    })
+</script>
+
+<script type="module">
+    import { app } from "/javascripts/firebaseInit.js";
+    import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+    const db = getDatabase(app);
+
+    let page = 1;
+    let query = $(frm.query).val();
+
+    getLocals();
+
+    // 즐겨찾기 버튼을 누른 경우
+    $("#div_locals").on("click", ".btn", async function(e) {
+        if(!sessionStorage.getItem("uid")) {
+            sessionStorage.setItem("target", "/locals");
+            location.href = "/users/login";
+            return;
+        }
+
+        const local = JSON.parse($(this).attr('local'));
+        console.log(local);
+        const ref_local = `favorite/${sessionStorage.getItem('uid')}/${local.id}`;
+        const snapshot = await get(ref(db, ref_local));
+        if(snapshot.val()) {
+            alert("이미 등록 된 장소입니다.");
+            return;
+        }
+
+        await set(ref(db, ref_local), local);
+        alert("등록 되었습니다.");
+    });
+
+    // 검색 버튼을 클릭 or 엔터 시
+    $(frm).on("submit", function(e){
+        e.preventDefault(); // Default event의 발생을 막음
+        query = $(frm.query).val();
+        page = 1;
+        getLocals();
+    });
+
+    // 다음 버튼을 클릭한 경우
+    $("#next_btn").on("click", function(e){
+        page++;
+        getLocals();
+    });
+    // 이전 버튼을 클릭한 경우
+    $("#prev_btn").on("click", function(e){
+        page--;
+        getLocals();
+    });
+
+    function getLocals() {
+        $.ajax({
+            type: "get",
+            url: "https://dapi.kakao.com/v2/local/search/keyword.json",
+            headers: {"Authorization": "KakaoAK 29e82fbcca120b0de0f8be1f9ce91a29"},
+            data: {page: page, query: query, size: 5},
+            success: function(data) {
+                console.log(data);
+
+                let temp = Handlebars.compile($("#temp_locals").html());
+                $("#div_locals").html(temp(data));
+
+                let last = Math.ceil(data.meta.pageable_count / 5);
+                $("#span_page").html(page + "/" + last)
+
+                if (page == 1)  $("#prev_btn").attr("disabled", true);
+                else            $("#prev_btn").attr("disabled", false);
+
+                if (data.meta.is_end)   $("#next_btn").attr("disabled", true);
+                else                    $("#next_btn").attr("disabled", false);
+            }
+        });
+    }
+</script>
