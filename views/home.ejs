@@ -1,0 +1,154 @@
+<style>
+  #div_books img {
+    cursor: pointer;
+  }
+
+  #div_books .bi-cart {
+    cursor: pointer;
+    color: green;
+  }
+</style>
+
+<!-- Content -->
+<div class="my-5 row">
+  <div class="col text-center container">
+    <div class="row mb-3 justify-content-end">
+      <form name="frm" class="col-6 col-md-4 col-lg-3">
+        <div class="input-group">
+          <input name="query" class="form-control" type="text" value="자바" />
+          <button class="btn btn-primary">검색</button>
+        </div>
+      </form>
+    </div>
+    <!-- 검색결과 출력 -->
+    <div id="div_books" class="row"></div>
+    <div class="text-center">
+      <button class="btn btn-primary" id="prev">이전</button>
+      <span id="span_page">1/10</span>
+      <button class="btn btn-primary" id="next">다음</button>
+    </div>
+  </div>
+</div>
+<!-- 도서정보 출력 템플릿 -->
+<script type="x-handlebars-template" id="temp_books">
+  {{#each documents}}
+    <div class="col-6 col-md-4 col-lg-2 mb-2 ">
+      <div class="card">
+        <div class="card-body">
+          <img src="{{chkImage thumbnail}} width="90%" index="{{@index}}">
+          <div class="ellipsis text-center">{{title}}</div>
+        </div>
+        <div class="card-footer">
+
+            {{fmtPrice price}}
+            <i class="cart bi bi-cart float-end" book="{{book @this}}"></i>
+
+        </div>
+      </div>
+    </div>
+    <%-include("books/modal.ejs")%>
+  {{/each}}
+</script>
+<script>
+  // Handlebars 함수
+  // 더미 이미지 출력
+  Handlebars.registerHelper("chkImage", function (image) {
+    if (image) {
+      return image;
+    } else {
+      return "https://via.placeholder.com/120x170";
+    }
+  });
+
+  //가격 콤마 함수
+  Handlebars.registerHelper("fmtPrice", function (price) {
+    if (price)
+      return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + "원";
+  });
+
+  Handlebars.registerHelper("book", function (book) {
+    return JSON.stringify(book);
+  });
+</script>
+
+<script type="module">
+    import {app} from '/javascripts/firebaseInit.js';
+    import { getDatabase, set, ref, onValue, get, child } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+    const db=getDatabase(app);
+    
+    
+
+    // 폼의 쿼리인풋박스안의 value값을 query 변수에 저장
+    let query=$(frm.query).val();
+    let page=1;
+
+
+ 
+
+    // 장바구니 아이콘을 클릭 했을 때
+    $("#div_books").on("click", ".bi-cart", async function(){
+        const book= JSON.parse($(this).attr("book"));
+        
+        if(sessionStorage.getItem("email")){
+            const uid=sessionStorage.getItem("uid");
+            const ref_book=ref(db,`cart/${uid}/${book.isbn}`);
+
+            const snapshot=await get(ref_book);
+            if(snapshot.val()){
+                alert("장바구니에 이미 존재하는 도서입니다!");
+            } else{
+                if(!confirm("장바구니에 해당 도서 넣으실래요?")) return;
+                await set(ref_book, book);
+                alert("해당 도서가 저장되었습니다.");
+            }
+        }else{
+            location.href="/users/login";
+        }
+    });
+
+  //이미지를 클릭했을때
+  $("#div_books").on("click", "img", function () {
+    let index = $(this).attr("index");
+    // alert(index);
+    $("#modal" + index).modal("show");
+  });
+
+  $(frm).on("submit", function (e) {
+    e.preventDefault();
+    page = 1;
+    query = $(frm.query).val();
+    getBooks();
+  });
+  $("#prev").on("click", function () {
+    page -= 1;
+    getBooks();
+  });
+  $("#next").on("click", function () {
+    page += 1;
+    getBooks();
+  });
+  getBooks();
+
+  // 도서검색 데이터 불러오기
+  function getBooks() {
+    $.ajax({
+      type: "GET",
+      url: "https://dapi.kakao.com/v3/search/book?target=authors",
+      headers: { Authorization: "KakaoAK 29e82fbcca120b0de0f8be1f9ce91a29" },
+      data: { query: query, page: page, size: 10 },
+      success: function (data) {
+        console.log(data);
+        let temp = Handlebars.compile($("#temp_books").html());
+        $("#div_books").html(temp(data));
+
+        let last = Math.ceil(data.meta.pageable_count / 10);
+        $("#span_page").html(page + "/" + last);
+
+        if (page == 1) $("#prev").attr("disabled", true);
+        else $("#prev").attr("disabled", false);
+        if (data.meta.is_end) $("#next").attr("disabled", true);
+        else $("#next").attr("disabled", false);
+      },
+    });
+  }
+</script>
