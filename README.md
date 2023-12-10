@@ -1,2 +1,0 @@
-# WebProgram
-WebProgramming lecture
